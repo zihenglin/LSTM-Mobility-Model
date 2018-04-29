@@ -43,7 +43,8 @@ class TwoLayerLstmModelBuilder(AbstractLstmModelBuilder):
                  lstm_dropout=None,
                  lstm_units=None,
                  number_of_mixtures=None,
-                 sampling_bias=None):
+                 sampling_bias=None,
+                 context_feature_columns=None):
         """
         Args:
             model_path(str): the path that the model weights should be
@@ -110,6 +111,10 @@ class TwoLayerLstmModelBuilder(AbstractLstmModelBuilder):
             if sampling_bias is None \
             else sampling_bias
 
+        self.context_feature_columns = [OptionalFeatures.start_dayofweek.name] \
+            if context_feature_columns is None \
+            else context_feature_columns
+
     def _build_generating_model(self, tensors):
         """Build training model on a tensorflow graph.
         """
@@ -167,7 +172,8 @@ class TwoLayerLstmModelBuilder(AbstractLstmModelBuilder):
             lstm_units=self.lstm_units,
             lstm_dropout=self.lstm_dropout,
             number_of_mixtures=self.number_of_mixtures,
-            batch_size=batch_size)
+            batch_size=batch_size,
+            context_dimensions=len(self.context_feature_columns))
         self._build_training_model(self.tensors)
         placeholders_dict = self.tensors.placeholders
 
@@ -201,7 +207,7 @@ class TwoLayerLstmModelBuilder(AbstractLstmModelBuilder):
             data_preprocessor = DataPreprocessor()
             traces_dict = data_preprocessor.preprocess_traces_df_dict(traces_dict)
 
-        data_loader = LstmInputLoader()
+        data_loader = LstmInputLoader(context_feature_columns=self.context_feature_columns)
         lstm_input_values_dict = data_loader.get_lstm_features_from_traces_dict(traces_dict)
 
         self.train_with_formated_data(lstm_input_values_dict,
@@ -257,7 +263,7 @@ class TwoLayerLstmModelBuilder(AbstractLstmModelBuilder):
             traces_dict = data_preprocessor.preprocess_traces_df_dict(traces_dict)
 
         # Get keys and values from dataframe_dict
-        data_loader = LstmInputLoader()
+        data_loader = LstmInputLoader(context_feature_columns=self.context_feature_columns)
         lstm_input_values = data_loader.get_lstm_features_from_partial_traces_dict(
             traces_dict,
             cut_time)

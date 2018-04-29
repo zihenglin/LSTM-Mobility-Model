@@ -49,7 +49,8 @@ class TwoLayerLstmCategoricalLocationModelBuilder(
                  lstm_dropout=None,
                  lstm_units=None,
                  number_of_mixtures=None,
-                 sampling_bias=None):
+                 sampling_bias=None,
+                 context_feature_columns=None):
         TwoLayerLstmModelBuilder.__init__(
             self,
             model_path=model_path,
@@ -59,7 +60,8 @@ class TwoLayerLstmCategoricalLocationModelBuilder(
             lstm_dropout=lstm_dropout,
             lstm_units=lstm_units,
             number_of_mixtures=number_of_mixtures,
-            sampling_bias=sampling_bias)
+            sampling_bias=sampling_bias,
+            context_feature_columns=context_feature_columns)
 
         # Model peripherals
         self.feature_builder = FeatureBuilder()
@@ -88,8 +90,9 @@ class TwoLayerLstmCategoricalLocationModelBuilder(
             data_preprocessor = DataPreprocessor()
             traces_dict = data_preprocessor.preprocess_traces_df_dict(
                 traces_dict,
-                categorical_location=True)
-        data_loader = LstmInputLoader()
+                categorical_location=True,
+                keep_column=self.context_feature_columns)
+        data_loader = LstmInputLoader(context_feature_columns=self.context_feature_columns)
         lstm_input_values_dict = data_loader.get_lstm_features_from_traces_dict(
             traces_dict=traces_dict,
             features=TwoLayerLstmCategoricalLocationModelBuilder.DEFAULT_FEATURE_LIST)
@@ -117,7 +120,8 @@ class TwoLayerLstmCategoricalLocationModelBuilder(
             lstm_units=self.lstm_units,
             lstm_dropout=self.lstm_dropout,
             number_of_mixtures=self.number_of_mixtures,
-            batch_size=batch_size)
+            batch_size=batch_size,
+            context_dimensions=len(self.context_feature_columns))
         self._build_training_model(self.tensors)
         placeholders_dict = self.tensors.placeholders
 
@@ -211,7 +215,7 @@ class TwoLayerLstmCategoricalLocationModelBuilder(
                 categorical_location=True)
 
         # Get keys and values from dataframe_dict
-        data_loader = LstmInputLoader()
+        data_loader = LstmInputLoader(context_feature_columns=self.context_feature_columns)
         lstm_input_values = data_loader.get_lstm_features_from_partial_traces_dict(
             traces_dict,
             cut_time,
