@@ -220,9 +220,10 @@ class DataPreprocessor(object):
             (DataFrame): a dataframe of stationary
                 activities.
         """
+        traces_df = self._add_activity_category_labels(traces_df)
+        traces_df = traces_df.copy()
         traces_df = self._add_time_features(traces_df)
         traces_df = self._normalize_data(traces_df, categorical_location)
-        traces_df = self._add_activity_category_labels(traces_df)
         return self.filter_df_columns(traces_df,
                                       categorical_location,
                                       **kwargs)
